@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 """ Console Module """
+import re
 import cmd
 import sys
+from shlex import split
 from models.base_model import BaseModel
 from models.__init__ import storage
 from models.user import User
@@ -11,6 +13,22 @@ from models.city import City
 from models.amenity import Amenity
 from models.review import Review
 
+def parse(arg):
+    curly_braces = re.search(r"\{(.*?)\}", arg)
+    brackets = re.search(r"\[(.*?)\]", arg)
+    if curly_braces is None:
+        if brackets is None:
+            return [i.strip(",") for i in split(arg)]
+        else:
+            lexer = split(arg[:brackets.span()[0]])
+            retl = [i.strip(",") for i in lexer]
+            retl.append(brackets.group())
+            return retl
+    else:
+        lexer = split(arg[:curly_braces.span()[0]])
+        retl = [i.strip(",") for i in lexer]
+        retl.append(curly_braces.group())
+        return retl
 
 class HBNBCommand(cmd.Cmd):
     """ Contains the functionality for the HBNB console"""
@@ -115,15 +133,31 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if not args:
+        arg_list = parse(args)
+        if not arg_list[0]:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        elif arg_list[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
+        new_instance = HBNBCommand.classes[arg_list[0]]()
+        for i in range(1, len(arg_list)):
+                arg_split = arg_list[i].split("=")
+                key = arg_split[0]
+                value = arg_split[1]
+                try:
+                        value = int(value)
+                except:
+                        try:
+                                value = float(value)
+                        except:
+                                if "\"" in value:
+                                        value = str(value.replace("\"", "\\\""))
+                                elif "_" in value:
+                                        value = str(value.replace("_", " "))
+                new_instance.__dict__[key] = value
         storage.save()
-        print(new_instance.id)
+        print(new_instance.id);
         storage.save()
 
     def help_create(self):
