@@ -32,12 +32,10 @@ def pythonfun(text="is cool"):
     return "Python {}".format(text.replace("_", " "))
 
 
-@app.route("/number", strict_slashes=False)
-@app.route("/number/<n>", strict_slashes=False)
+@app.route("/number/<int:n>", strict_slashes=False)
 def numberfun(n):
     """display “n is a number” only if n is an integer"""
-    if type(n) is int:
-        return n
+    return "{:d} is a number".format(n)
 
 
 if __name__ == "__main__":
